@@ -5,27 +5,7 @@
  */
 package org.hyperledger.fabric.shim.fvt;
 
-import static org.hamcrest.Matchers.is;
-import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.COMPLETED;
-import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.INIT;
-import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.READY;
-import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.REGISTER;
-import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.RESPONSE;
-import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.TRANSACTION;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.google.protobuf.ByteString;
-
 import org.hyperledger.fabric.protos.peer.ChaincodeInput;
 import org.hyperledger.fabric.protos.peer.ChaincodeMessage;
 import org.hyperledger.fabric.protos.peer.Response;
@@ -55,10 +35,28 @@ import org.hyperledger.fabric.shim.mock.peer.QueryNextStep;
 import org.hyperledger.fabric.shim.mock.peer.RegisterStep;
 import org.hyperledger.fabric.shim.mock.peer.ScenarioStep;
 import org.hyperledger.fabric.shim.utils.MessageUtil;
-import org.junit.After;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.COMPLETED;
+import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.INIT;
+import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.READY;
+import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.REGISTER;
+import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.RESPONSE;
+import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.TRANSACTION;
+
 
 public final class ChaincodeFVTest {
 
@@ -67,7 +65,7 @@ public final class ChaincodeFVTest {
 
     private ChaincodeMockPeer server;
 
-    @After
+    @AfterEach
     public void afterTest() throws Exception {
         if (server != null) {
             server.stop();
@@ -88,8 +86,8 @@ public final class ChaincodeFVTest {
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 1, 5000, TimeUnit.MILLISECONDS);
 
-        assertThat(server.getLastMessageSend().getType(), is(READY));
-        assertThat(server.getLastMessageRcvd().getType(), is(REGISTER));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(READY);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(REGISTER);
     }
 
     @Test
@@ -123,8 +121,8 @@ public final class ChaincodeFVTest {
         server.send(initMsg);
         ChaincodeMockPeer.checkScenarioStepEnded(server, 2, 5000, TimeUnit.MILLISECONDS);
 
-        assertThat(server.getLastMessageSend().getType(), is(INIT));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(INIT);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
     }
 
     @Test
@@ -132,18 +130,18 @@ public final class ChaincodeFVTest {
         final ChaincodeBase cb = new ChaincodeBase() {
             @Override
             public Response init(final ChaincodeStub stub) {
-                assertThat(stub.getFunction(), is("init"));
-                assertThat(stub.getArgs().size(), is(3));
+                assertThat(stub.getFunction()).isEqualTo("init");
+                assertThat(stub.getArgs()).hasSize(3);
                 stub.putState("a", ByteString.copyFromUtf8("100").toByteArray());
                 return ResponseUtils.newSuccessResponse("OK response1");
             }
 
             @Override
             public Response invoke(final ChaincodeStub stub) {
-                assertThat(stub.getFunction(), is("invoke"));
-                assertThat(stub.getArgs().size(), is(3));
+                assertThat(stub.getFunction()).isEqualTo("invoke");
+                assertThat(stub.getArgs()).hasSize(3);
                 final String aKey = stub.getStringArgs().get(1);
-                assertThat(aKey, is("a"));
+                assertThat(aKey).isEqualTo("a");
                 stub.getStringState(aKey);
                 stub.putState(aKey, ByteString.copyFromUtf8("120").toByteArray());
                 stub.delState("delKey");
@@ -174,10 +172,9 @@ public final class ChaincodeFVTest {
         server.send(initMsg);
         ChaincodeMockPeer.checkScenarioStepEnded(server, 3, 5000, TimeUnit.MILLISECONDS);
 
-        assertThat(server.getLastMessageSend().getType(), is(INIT));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
-        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
-                is("OK response1"));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(INIT);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
+        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage()).isEqualTo("OK response1");
 
         final ByteString invokePayload = ChaincodeInput.newBuilder()
                 .addArgs(ByteString.copyFromUtf8("invoke")).addArgs(ByteString.copyFromUtf8("a"))
@@ -188,9 +185,9 @@ public final class ChaincodeFVTest {
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 7, 5000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(TRANSACTION));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(TRANSACTION);
 
-        // assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
+        // assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED));
 
         // assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
         // is("OK response2"));
@@ -210,7 +207,7 @@ public final class ChaincodeFVTest {
                 final byte[] epBytes = stub.getStateValidationParameter(aKey);
                 final StateBasedEndorsement stateBasedEndorsement = StateBasedEndorsementFactory.getInstance()
                         .newStateBasedEndorsement(epBytes);
-                assertThat(stateBasedEndorsement.listOrgs().size(), is(2));
+                assertThat(stateBasedEndorsement.listOrgs()).hasSize(2);
                 stub.setStateValidationParameter(aKey, stateBasedEndorsement.policy());
                 return ResponseUtils.newSuccessResponse("OK response2");
             }
@@ -242,10 +239,9 @@ public final class ChaincodeFVTest {
         server.send(initMsg);
         ChaincodeMockPeer.checkScenarioStepEnded(server, 2, 5000, TimeUnit.MILLISECONDS);
 
-        assertThat(server.getLastMessageSend().getType(), is(INIT));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
-        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
-                is("OK response1"));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(INIT);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
+        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage()).isEqualTo("OK response1");
 
         final ByteString invokePayload = ChaincodeInput.newBuilder()
                 .addArgs(ByteString.copyFromUtf8("invoke")).addArgs(ByteString.copyFromUtf8("a")).build()
@@ -256,10 +252,9 @@ public final class ChaincodeFVTest {
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 5, 5000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(RESPONSE));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
-        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
-                is("OK response2"));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(RESPONSE);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
+        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage()).isEqualTo("OK response2");
     }
 
     @Test
@@ -272,8 +267,8 @@ public final class ChaincodeFVTest {
 
             @Override
             public Response invoke(final ChaincodeStub stub) {
-                assertThat(stub.getFunction(), is("invoke"));
-                assertThat(stub.getArgs().size(), is(3));
+                assertThat(stub.getFunction()).isEqualTo("invoke");
+                assertThat(stub.getArgs()).hasSize(3);
                 final String aKey = stub.getStringArgs().get(1);
                 final String bKey = stub.getStringArgs().get(2);
 
@@ -282,11 +277,9 @@ public final class ChaincodeFVTest {
                 while (iter.hasNext()) {
                     iter.next();
                 }
-                try {
-                    stateByRange.close();
-                } catch (final Exception e) {
-                    fail("No exception expected");
-                }
+
+                assertThatCode(stateByRange::close).doesNotThrowAnyException();
+
                 return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
@@ -325,18 +318,16 @@ public final class ChaincodeFVTest {
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 5, 5000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(RESPONSE));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
-        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
-                is("OK response2"));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(RESPONSE);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
+        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage()).isEqualTo("OK response2");
 
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 9, 30000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(RESPONSE));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
-        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
-                is("OK response2"));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(RESPONSE);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
+        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage()).isEqualTo("OK response2");
     }
 
     @Test
@@ -356,11 +347,9 @@ public final class ChaincodeFVTest {
                 while (iter.hasNext()) {
                     iter.next();
                 }
-                try {
-                    queryResult.close();
-                } catch (final Exception e) {
-                    fail("No exception expected");
-                }
+
+                assertThatCode(queryResult::close).doesNotThrowAnyException();
+
                 return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
@@ -399,18 +388,16 @@ public final class ChaincodeFVTest {
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 5, 5000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(RESPONSE));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
-        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
-                is("OK response2"));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(RESPONSE);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
+        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage()).isEqualTo("OK response2");
 
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 9, 5000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(RESPONSE));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
-        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
-                is("OK response2"));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(RESPONSE);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
+        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage()).isEqualTo("OK response2");
     }
 
     @Test
@@ -430,11 +417,9 @@ public final class ChaincodeFVTest {
                 while (iter.hasNext()) {
                     iter.next();
                 }
-                try {
-                    queryResult.close();
-                } catch (final Exception e) {
-                    fail("No exception expected");
-                }
+
+                assertThatCode(queryResult::close).doesNotThrowAnyException();
+
                 return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
@@ -469,10 +454,9 @@ public final class ChaincodeFVTest {
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 5, 5000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(RESPONSE));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
-        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage(),
-                is("OK response2"));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(RESPONSE);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
+        assertThat(Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage()).isEqualTo("OK response2");
 
     }
 
@@ -519,8 +503,8 @@ public final class ChaincodeFVTest {
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 4, 10000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(RESPONSE));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(RESPONSE);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
     }
 
     @Test
@@ -556,10 +540,10 @@ public final class ChaincodeFVTest {
         server.send(initMsg);
         ChaincodeMockPeer.checkScenarioStepEnded(server, 2, 5000, TimeUnit.MILLISECONDS);
 
-        assertThat(server.getLastMessageSend().getType(), is(INIT));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(INIT);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
         String resp1 = (Response.parseFrom(server.getLastMessageRcvd().getPayload()).getPayload().toStringUtf8());
-        assertThat(resp1, is("Wrong response1"));
+        assertThat(resp1).isEqualTo("Wrong response1");
 
         final ByteString invokePayload = ChaincodeInput.newBuilder().build().toByteString();
         final ChaincodeMessage invokeMsg = MessageUtil.newEventMessage(TRANSACTION, "testChannel", "0",
@@ -568,10 +552,10 @@ public final class ChaincodeFVTest {
         server.send(invokeMsg);
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 3, 5000, TimeUnit.MILLISECONDS);
-        assertThat(server.getLastMessageSend().getType(), is(TRANSACTION));
-        assertThat(server.getLastMessageRcvd().getType(), is(COMPLETED));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(TRANSACTION);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(COMPLETED);
         String resp2 = Response.parseFrom(server.getLastMessageRcvd().getPayload()).getMessage().toString();
-        assertThat(resp2, is("Wrong response2"));
+        assertThat(resp2).isEqualTo("Wrong response2");
     }
 
     @Test
@@ -624,8 +608,9 @@ public final class ChaincodeFVTest {
 
         cb.start(new String[] {"-a", "127.0.0.1:7052", "-i", "testId" });
 
-        assertEquals("Wrong debug level for " + cb.getClass().getPackage().getName(), Level.FINEST,
-                Logger.getLogger(cb.getClass().getPackage().getName()).getLevel());
+        assertThat(Logger.getLogger(cb.getClass().getPackage().getName()).getLevel())
+                .withFailMessage("Wrong debug level for " + cb.getClass().getPackage().getName())
+                .isEqualTo(Level.FINEST);
 
     }
 

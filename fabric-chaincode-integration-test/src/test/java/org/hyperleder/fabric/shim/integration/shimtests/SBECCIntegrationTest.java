@@ -5,22 +5,19 @@ SPDX-License-Identifier: Apache-2.0
 */
 package org.hyperleder.fabric.shim.integration.shimtests;
 
-import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.Matchers.not; 
-import static org.junit.Assert.assertThat;
 
 import org.hyperleder.fabric.shim.integration.util.FabricState;
 import org.hyperleder.fabric.shim.integration.util.InvokeHelper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SBECCIntegrationTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         FabricState.getState().start();
-        
-
     }
 
     @Test
@@ -32,59 +29,59 @@ public class SBECCIntegrationTest {
         String text;
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "foo");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("foo"));
+        assertThat(text).contains("foo");
 
         text = helper.invoke("org1", "EndorsementCC:addorgs", mode, "org1MSP");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:listorgs", mode);
-        assertThat(text, containsString("org1MSP"));
+        assertThat(text).contains("org1MSP");
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "val1");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("val1"));
+        assertThat(text).contains("val1");
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "val2");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("val2"));
+        assertThat(text).contains("val2");
 
         text = helper.invoke("org1", "EndorsementCC:addorgs", mode, "org2MSP");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:listorgs", mode);
-        assertThat(text, containsString("org2MSP"));
-        assertThat(text, containsString("org1MSP"));
+        assertThat(text).contains("org2MSP");
+        assertThat(text).contains("org1MSP");
 
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "val3");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("val3"));
+        assertThat(text).contains("val3");
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "val4");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("val4"));
+        assertThat(text).contains("val4");
 
         text = helper.invoke("org1", "EndorsementCC:delorgs", mode, "org1MSP");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:listorgs", mode);
-        assertThat(text, containsString("org2MSP"));
-        assertThat(text, not(containsString("org1MSP")));
+        assertThat(text).contains("org2MSP");
+        assertThat(text).doesNotContain("org1MSP");
 
         text = helper.invoke("org1", "EndorsementCC:deleteval", mode);
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
         text = helper.invoke("org1", "EndorsementCC:recordExists", mode);
-        assertThat(text, containsString("false"));
+        assertThat(text).contains("false");
 
     }
 
@@ -97,60 +94,60 @@ public class SBECCIntegrationTest {
         String text;
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "foo");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("foo"));
+        assertThat(text).contains("foo");
 
         text = helper.invoke("org1", "EndorsementCC:addorgs", mode, "org1MSP");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:listorgs", mode);
-        assertThat(text, containsString("org1MSP"));
+        assertThat(text).contains("org1MSP");
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "val1");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("val1"));
+        assertThat(text).contains("val1");
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "val2");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("val2"));
+        assertThat(text).contains("val2");
 
         text = helper.invoke("org1", "EndorsementCC:addorgs", mode, "org2MSP");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:listorgs", mode);
-        assertThat(text, containsString("org2MSP"));
-        assertThat(text, containsString("org1MSP"));
+        assertThat(text).contains("org2MSP");
+        assertThat(text).contains("org1MSP");
       
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "val3");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("val3"));
+        assertThat(text).contains("val3");
 
         text = helper.invoke("org1", "EndorsementCC:setval", mode, "val4");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:getval", mode);
-        assertThat(text, containsString("val4"));
+        assertThat(text).contains("val4");
 
         text = helper.invoke("org1", "EndorsementCC:delorgs", mode, "org1MSP");
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
 
         text = helper.invoke("org1", "EndorsementCC:listorgs", mode);
-        assertThat(text, containsString("org2MSP"));
-        assertThat(text, not(containsString("org1MSP")));
+        assertThat(text).contains("org2MSP");
+        assertThat(text).doesNotContain("org1MSP");
 
         text = helper.invoke("org1", "EndorsementCC:deleteval", mode);
-        assertThat(text, containsString("success"));
+        assertThat(text).contains("success");
         text = helper.invoke("org1", "EndorsementCC:recordExists", mode);
-        assertThat(text, containsString("false"));
+        assertThat(text).contains("false");
 
     }
 

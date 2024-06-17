@@ -5,21 +5,14 @@
  */
 package org.hyperledger.fabric.shim.ext.sbe.impl;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-
 import org.hyperledger.fabric.protos.common.MSPRole.MSPRoleType;
 import org.hyperledger.fabric.shim.ext.sbe.StateBasedEndorsement;
 import org.hyperledger.fabric.shim.ext.sbe.StateBasedEndorsement.RoleType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class StateBasedEndorsementImplTest {
 
@@ -30,10 +23,10 @@ public class StateBasedEndorsementImplTest {
         ep.addOrgs(RoleType.RoleTypePeer, "Org1");
 
         final byte[] epBytes = ep.policy();
-        assertThat(epBytes, is(not(nullValue())));
-        assertTrue(epBytes.length > 0);
+        assertThat(epBytes).isNotNull();
+        assertThat(epBytes).hasSizeGreaterThan(0);
         final byte[] expectedEPBytes = StateBasedEndorsementUtils.signedByFabricEntity("Org1", MSPRoleType.PEER).toByteString().toByteArray();
-        assertArrayEquals(expectedEPBytes, epBytes);
+        assertThat(epBytes).isEqualTo(expectedEPBytes);
     }
 
     @Test
@@ -43,19 +36,18 @@ public class StateBasedEndorsementImplTest {
         final StateBasedEndorsement ep = StateBasedEndorsementFactory.getInstance().newStateBasedEndorsement(initEPBytes);
         final List<String> listOrgs = ep.listOrgs();
 
-        assertThat(listOrgs, is(not(nullValue())));
-        assertThat(listOrgs, contains("Org1"));
-        assertThat(listOrgs, hasSize(1));
+        assertThat(listOrgs).isNotNull();
+        assertThat(listOrgs).containsExactly("Org1");
 
         ep.addOrgs(RoleType.RoleTypeMember, "Org2");
         ep.delOrgs("Org1");
 
         final byte[] epBytes = ep.policy();
 
-        assertThat(epBytes, is(not(nullValue())));
-        assertTrue(epBytes.length > 0);
+        assertThat(epBytes).isNotNull();
+        assertThat(epBytes).hasSizeGreaterThan(0);
         final byte[] expectedEPBytes = StateBasedEndorsementUtils.signedByFabricEntity("Org2", MSPRoleType.MEMBER).toByteString().toByteArray();
-        assertArrayEquals(expectedEPBytes, epBytes);
+        assertThat(epBytes).isEqualTo(expectedEPBytes);
     }
 
     @Test
@@ -64,8 +56,7 @@ public class StateBasedEndorsementImplTest {
         final StateBasedEndorsement ep = StateBasedEndorsementFactory.getInstance().newStateBasedEndorsement(initEPBytes);
         final List<String> listOrgs = ep.listOrgs();
 
-        assertThat(listOrgs, is(not(nullValue())));
-        assertThat(listOrgs, hasSize(1));
-        assertThat(listOrgs, contains("Org1"));
+        assertThat(listOrgs).isNotNull();
+        assertThat(listOrgs).containsExactly("Org1");
     }
 }

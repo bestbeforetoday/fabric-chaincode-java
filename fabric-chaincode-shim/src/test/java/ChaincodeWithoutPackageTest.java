@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import static org.hamcrest.Matchers.is;
 import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.READY;
 import static org.hyperledger.fabric.protos.peer.ChaincodeMessage.Type.REGISTER;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,10 +16,10 @@ import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.mock.peer.ChaincodeMockPeer;
 import org.hyperledger.fabric.shim.mock.peer.RegisterStep;
 import org.hyperledger.fabric.shim.mock.peer.ScenarioStep;
-import org.junit.After;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 public final class ChaincodeWithoutPackageTest {
     @Rule
@@ -28,7 +27,7 @@ public final class ChaincodeWithoutPackageTest {
 
     private ChaincodeMockPeer server;
 
-    @After
+    @AfterEach
     public void afterTest() throws Exception {
         if (server != null) {
             server.stop();
@@ -49,8 +48,8 @@ public final class ChaincodeWithoutPackageTest {
 
         ChaincodeMockPeer.checkScenarioStepEnded(server, 1, 5000, TimeUnit.MILLISECONDS);
 
-        assertThat(server.getLastMessageSend().getType(), is(READY));
-        assertThat(server.getLastMessageRcvd().getType(), is(REGISTER));
+        assertThat(server.getLastMessageSend().getType()).isEqualTo(READY);
+        assertThat(server.getLastMessageRcvd().getType()).isEqualTo(REGISTER);
     }
 
 }
