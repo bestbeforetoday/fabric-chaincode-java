@@ -252,7 +252,8 @@ public class JSONTransactionSerializerTest {
         buffer = serializer.toBuffer(value, ts);
 
         assertThat(buffer, equalTo(new byte[] {49}));
-        assertThat(serializer.fromBuffer(buffer, ts), equalTo(1));
+        Object actual = serializer.fromBuffer(buffer, ts);
+        assertThat(actual, equalTo(1));
 
         ts = TypeSchema.typeConvert(long.class);
         value = 9192631770L;

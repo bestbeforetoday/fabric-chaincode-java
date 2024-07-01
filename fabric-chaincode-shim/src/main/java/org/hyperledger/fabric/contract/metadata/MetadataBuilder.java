@@ -5,19 +5,6 @@
  */
 package org.hyperledger.fabric.contract.metadata;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaClient;
@@ -35,6 +22,21 @@ import org.hyperledger.fabric.contract.routing.TypeRegistry;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 /**
  * Builder to assist in production of the metadata.
  * <p>
@@ -42,8 +44,18 @@ import org.json.JSONTokener;
  * metadata It is not a store of information, rather a set of functional data to
  * process to and from metadata json to the internal data structure
  */
+@SuppressWarnings("PMD.MutableStaticState")
 public final class MetadataBuilder {
-    private static Logger logger = Logger.getLogger(MetadataBuilder.class);
+    private static final Logger LOGGER = Logger.getLogger(MetadataBuilder.class);
+
+    // Metadata is composed of three primary sections
+    // each of which is stored in a map
+    static Map<String, Map<String, Serializable>> contractMap = new ConcurrentHashMap<>();
+    static Map<String, Object> overallInfoMap = new ConcurrentHashMap<>();
+    static Map<String, Object> componentMap = new ConcurrentHashMap<>();
+
+    // The schema client used to load any other referenced schemas
+    static SchemaClient schemaClient = new DefaultSchemaClient();
 
     private MetadataBuilder() {
 
@@ -53,7 +65,7 @@ public final class MetadataBuilder {
     static class MetadataMap<K, V> extends HashMap<K, V> {
 
         V putIfNotNull(final K key, final V value) {
-            logger.info(key + " " + value);
+            LOGGER.info(() -> key + " " + value);
             if (value != null && !value.toString().isEmpty()) {
                 return put(key, value);
             } else {
@@ -62,23 +74,14 @@ public final class MetadataBuilder {
         }
     }
 
-    // Metadata is composed of three primary sections
-    // each of which is stored in a map
-    private static Map<String, HashMap<String, Serializable>> contractMap = new HashMap<>();
-    private static Map<String, Object> overallInfoMap = new HashMap<String, Object>();
-    private static Map<String, Object> componentMap = new HashMap<String, Object>();
-
-    // The schema client used to load any other referenced schemas
-    private static SchemaClient schemaClient = new DefaultSchemaClient();
-
     /**
      * Validation method.
      *
      * @throws ValidationException if the metadata is not valid
      */
     public static void validate() {
-        logger.info("Running schema test validation");
-        final ClassLoader cl = MetadataBuilder.class.getClassLoader();
+        LOGGER.info("Running schema test validation");
+        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try (InputStream contractSchemaInputStream = cl.getResourceAsStream("contract-schema.json");
                 InputStream jsonSchemaInputStream = cl.getResourceAsStream("json-schema-draft-04-schema.json")) {
             final JSONObject rawContractSchema = new JSONObject(new JSONTokener(contractSchemaInputStream));
@@ -89,11 +92,11 @@ public final class MetadataBuilder {
             schema.validate(metadata());
 
         } catch (final IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         } catch (final ValidationException e) {
-            logger.error(e.getMessage());
-            e.getCausingExceptions().stream().map(ValidationException::getMessage).forEach(logger::info);
-            logger.error(debugString());
+            LOGGER.error(e::getMessage);
+            e.getCausingExceptions().stream().map(ValidationException::getMessage).forEach(LOGGER::info);
+            LOGGER.error(MetadataBuilder::debugString);
             throw e;
         }
 
@@ -115,8 +118,8 @@ public final class MetadataBuilder {
         // need to validate that the metadata that has been created is really valid
         // it should be as it's been created by code, but this is a valuable double
         // check
-        logger.info("Validating schema created");
-        MetadataBuilder.validate();
+        LOGGER.info("Validating schema created");
+        validate();
 
     }
 
@@ -125,16 +128,17 @@ public final class MetadataBuilder {
      *
      * @param datatype DataTypeDefinition
      */
+    @SuppressWarnings("PMD.LooseCoupling")
     public static void addComponent(final DataTypeDefinition datatype) {
 
-        final Map<String, Object> component = new HashMap<>();
+        final Map<String, Object> component = new ConcurrentHashMap<>();
 
         component.put("$id", datatype.getName());
         component.put("type", "object");
         component.put("additionalProperties", false);
 
         final Map<String, TypeSchema> propertiesMap = datatype.getProperties().entrySet().stream()
-                .collect(Collectors.toMap(Entry::getKey, e -> (e.getValue().getSchema())));
+                .collect(Collectors.toMap(Entry::getKey, e -> e.getValue().getSchema()));
         component.put("properties", propertiesMap);
 
         componentMap.put(datatype.getSimpleName(), component);
@@ -154,7 +158,7 @@ public final class MetadataBuilder {
         final Contract annotation = contractDefinition.getAnnotation();
 
         final Info info = annotation.info();
-        final HashMap<String, Object> infoMap = new HashMap<String, Object>();
+        final HashMap<String, Object> infoMap = new HashMap<>();
         infoMap.put("title", info.title());
         infoMap.put("description", info.description());
         infoMap.put("termsOfService", info.termsOfService());
@@ -173,7 +177,7 @@ public final class MetadataBuilder {
         });
         infoMap.put("version", info.version());
 
-        final HashMap<String, Serializable> contract = new HashMap<String, Serializable>();
+        final Map<String, Serializable> contract = new HashMap<>();
         contract.put("name", key);
         contract.put("transactions", new ArrayList<Object>());
         contract.put("info", infoMap);

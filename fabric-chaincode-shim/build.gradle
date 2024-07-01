@@ -17,7 +17,7 @@ plugins {
     id 'jacoco'
     id 'signing'
     id 'checkstyle'
-    id 'org.cyclonedx.bom' version '1.8.1'
+    id 'pmd'
 }
 
 checkstyle {
@@ -31,6 +31,13 @@ checkstyleMain {
 checkstyleMain.exclude("**/ChaincodeServerProperties.**")
 checkstyleTest {
     source ='src/test/java'
+}
+
+pmd {
+    toolVersion = '7.3.0'
+    ruleSetFiles = files('../pmd-ruleset.xml')
+    ruleSets = [] // explicitly set to empty to avoid using the default configuration
+    ignoreFailures = false
 }
 
 configurations {

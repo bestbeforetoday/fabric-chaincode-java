@@ -21,7 +21,7 @@ public class Logger extends java.util.logging.Logger {
         super(name, null);
 
         // ensure that the parent logger is set
-        this.setParent(java.util.logging.Logger.getLogger("org.hyperledger.fabric"));
+        super.setParent(java.util.logging.Logger.getLogger("org.hyperledger.fabric"));
     }
 
     /**

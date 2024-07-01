@@ -85,6 +85,7 @@ public interface ContractInterface {
      * @param ctx the context as created by {@link #createContext(ChaincodeStub)}.
      */
     default void beforeTransaction(final Context ctx) {
+        // Do nothing by default
     }
 
     /**
@@ -99,5 +100,6 @@ public interface ContractInterface {
      *               possible to modify this object.
      */
     default void afterTransaction(final Context ctx, final Object result) {
+        // Do nothing by default
     }
 }

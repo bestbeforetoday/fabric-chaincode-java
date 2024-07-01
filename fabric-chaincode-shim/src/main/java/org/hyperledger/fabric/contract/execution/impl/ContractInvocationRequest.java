@@ -6,7 +6,6 @@
 
 package org.hyperledger.fabric.contract.execution.impl;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,19 +15,19 @@ import org.hyperledger.fabric.contract.execution.InvocationRequest;
 import org.hyperledger.fabric.shim.ChaincodeStub;
 
 public class ContractInvocationRequest implements InvocationRequest {
-    private String namespace;
-    private String method;
-    private List<byte[]> args = Collections.emptyList();
+    private final String namespace;
+    private final String method;
+    private final List<byte[]> args;
 
-    private static Log logger = LogFactory.getLog(ContractInvocationRequest.class);
+    private static final Log LOG = LogFactory.getLog(ContractInvocationRequest.class);
 
     /**
      * @param context
      */
     public ContractInvocationRequest(final ChaincodeStub context) {
-        final String func = context.getStringArgs().size() > 0 ? context.getStringArgs().get(0) : null;
+        final String func = context.getStringArgs().isEmpty() ? null : context.getStringArgs().get(0);
         final String[] funcParts = func.split(":");
-        logger.debug(func);
+        LOG.debug(func);
         if (funcParts.length == 2) {
             namespace = funcParts[0];
             method = funcParts[1];
@@ -38,7 +37,9 @@ public class ContractInvocationRequest implements InvocationRequest {
         }
 
         args = context.getArgs().stream().skip(1).collect(Collectors.toList());
-        logger.debug(namespace + " " + method + " " + args);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(namespace + " " + method + " " + args);
+        }
     }
 
     /**

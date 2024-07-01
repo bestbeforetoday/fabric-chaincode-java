@@ -188,7 +188,7 @@ public final class TypeSchema extends HashMap<String, Object> {
     public static TypeSchema typeConvert(final Class<?> clz) {
         final TypeSchema returnschema = new TypeSchema();
         String className = clz.getTypeName();
-        if (className == "void") {
+        if ("void".equals(className)) {
             return null;
         }
 

@@ -28,6 +28,7 @@ public interface SerializerInterface {
      * @param ts
      * @return buffer
      */
+    @SuppressWarnings("PMD.LooseCoupling")
     byte[] toBuffer(Object value, TypeSchema ts);
 
     /**
@@ -38,6 +39,7 @@ public interface SerializerInterface {
      *
      * @return Object created; relies on Java auto-boxing for primitives
      */
+    @SuppressWarnings("PMD.LooseCoupling")
     Object fromBuffer(byte[] buffer, TypeSchema ts);
 
 }

@@ -40,25 +40,14 @@ public class MetadataBuilderTest {
             + "          \"contact\": {\"email\": \"fred@example.com\"}\n" + "       }\n" + "    }\n" + "";
 
     // fields are private, so use reflection to bypass this for unit testing
-    private void setMetadataBuilderField(final String name, final Object value) {
-        try {
-            final Field f = MetadataBuilder.class.getDeclaredField(name);
-            f.setAccessible(true);
-            f.set(null, value);
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Unable to set field " + e.getMessage());
-        }
-    }
-
     @Before
     @After
     public void beforeAndAfterEach() {
 
-        setMetadataBuilderField("componentMap", new HashMap<String, Object>());
-        setMetadataBuilderField("contractMap", new HashMap<String, HashMap<String, Serializable>>());
-        setMetadataBuilderField("overallInfoMap", new HashMap<String, Object>());
-        setMetadataBuilderField("schemaClient", new DefaultSchemaClient());
+        MetadataBuilder.componentMap = new HashMap<>();
+        MetadataBuilder.contractMap = new HashMap<>();
+        MetadataBuilder.overallInfoMap = new HashMap<>();
+        MetadataBuilder.schemaClient = new DefaultSchemaClient();
 
     }
 
@@ -74,14 +63,14 @@ public class MetadataBuilderTest {
     public void defaultSchemasNotLoadedFromNetwork() {
         final ContractDefinition contractDefinition = new ContractDefinitionImpl(SampleContract.class);
         MetadataBuilder.addContract(contractDefinition);
-        setMetadataBuilderField("schemaClient", new SchemaClient() {
+        MetadataBuilder.schemaClient = new SchemaClient() {
 
             @Override
             public InputStream get(final String uri) {
                 throw new RuntimeException("Refusing to load schema: " + uri);
             }
 
-        });
+        };
         MetadataBuilder.validate();
     }
 

@@ -82,6 +82,7 @@ public class ContractExecutionService implements ExecutionService {
         return response;
     }
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private byte[] convertReturn(final Object obj, final TxFunction txFn) {
         final SerializerInterface serializer = serializers.getSerializer(
                 txFn.getRouting().getSerializerName(), Serializer.TARGET.TRANSACTION);

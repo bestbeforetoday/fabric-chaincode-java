@@ -26,6 +26,7 @@ import org.hyperledger.fabric.shim.ResponseUtils;
 import org.hyperledger.fabric.traces.Traces;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -36,7 +37,7 @@ import java.util.logging.Logger;
  * @see ContractInterface
  */
 public final class ContractRouter extends ChaincodeBase {
-    private static Logger logger = Logger.getLogger(ContractRouter.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ContractRouter.class.getName());
 
     private final RoutingRegistry registry;
     private final TypeRegistry typeRegistry;
@@ -54,7 +55,8 @@ public final class ContractRouter extends ChaincodeBase {
      *
      * @param args
      */
-    public ContractRouter(final String[] args) {
+    public ContractRouter(final String... args) {
+        super();
         super.initializeLogging();
         super.processEnvironmentOptions();
         super.processCommandLineOptions(args);
@@ -64,7 +66,7 @@ public final class ContractRouter extends ChaincodeBase {
         Metrics.initialize(props);
         Traces.initialize(props);
 
-        logger.fine("ContractRouter<init>");
+        LOGGER.fine("ContractRouter<init>");
         registry = new RoutingRegistryImpl();
         typeRegistry = TypeRegistry.getRegistry();
 
@@ -74,8 +76,8 @@ public final class ContractRouter extends ChaincodeBase {
             serializers.findAndSetContents();
         } catch (InstantiationException | IllegalAccessException e) {
             final ContractRuntimeException cre = new ContractRuntimeException("Unable to locate Serializers", e);
-            logger.severe(() -> Logging.formatError(cre));
-            throw new RuntimeException(cre);
+            LOGGER.severe(() -> Logging.formatError(cre));
+            throw new IllegalStateException(cre);
         }
 
         executor = ExecutionFactory.getInstance().createExecutionService(serializers);
@@ -93,30 +95,32 @@ public final class ContractRouter extends ChaincodeBase {
      *
      * This will send the initial flow back to the peer
      *
-     * @throws Exception
+     * @throws ContractRuntimeException if connection to the peer fails.
      */
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     void startRouting() {
         try {
             super.connectToPeer();
         } catch (final Exception e) {
-            logger.severe(() -> Logging.formatError(e));
+            LOGGER.severe(() -> Logging.formatError(e));
             final ContractRuntimeException cre = new ContractRuntimeException("Unable to start routing", e);
             throw cre;
         }
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     private Response processRequest(final ChaincodeStub stub) {
-        logger.info(() -> "Got invoke routing request");
+        LOGGER.info(() -> "Got invoke routing request");
         try {
-            if (stub.getStringArgs().size() > 0) {
-                logger.info(() -> "Got the invoke request for:" + stub.getFunction() + " " + stub.getParameters());
-                final InvocationRequest request = ExecutionFactory.getInstance().createRequest(stub);
-                final TxFunction txFn = getRouting(request);
-                logger.info(() -> "Got routing:" + txFn.getRouting());
-                return executor.executeRequest(txFn, request, stub);
-            } else {
+            if (stub.getStringArgs().isEmpty()) {
                 return ResponseUtils.newSuccessResponse();
             }
+
+            LOGGER.info(() -> "Got the invoke request for:" + stub.getFunction() + " " + stub.getParameters());
+            final InvocationRequest request = ExecutionFactory.getInstance().createRequest(stub);
+            final TxFunction txFn = getRouting(request);
+            LOGGER.info(() -> "Got routing:" + txFn.getRouting());
+            return executor.executeRequest(txFn, request, stub);
         } catch (final Throwable throwable) {
             return ResponseUtils.newErrorResponse(throwable);
         }
@@ -143,7 +147,7 @@ public final class ContractRouter extends ChaincodeBase {
         if (registry.containsRoute(request)) {
             return registry.getTxFn(request);
         } else {
-            logger.fine(() -> "Namespace is " + request);
+            LOGGER.fine(() -> "Namespace is " + request);
             final ContractDefinition contract = registry.getContract(request.getNamespace());
             return contract.getUnknownRoute();
         }
@@ -154,26 +158,26 @@ public final class ContractRouter extends ChaincodeBase {
      *
      * @param args
      */
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) throws URISyntaxException, IOException, InterruptedException {
 
         final ContractRouter cfc = new ContractRouter(args);
         cfc.findAllContracts();
 
-        logger.fine(cfc.getRoutingRegistry().toString());
+        LOGGER.fine(() -> cfc.getRoutingRegistry().toString());
 
         // Create the Metadata ahead of time rather than have to produce every
         // time
         MetadataBuilder.initialize(cfc.getRoutingRegistry(), cfc.getTypeRegistry());
-        logger.info(() -> "Metadata follows:" + MetadataBuilder.debugString());
+        LOGGER.info(() -> "Metadata follows:" + MetadataBuilder.debugString());
 
         // check if this should be running in client or server mode
         if (cfc.isServer()) {
-            logger.info("Starting chaincode as server");
+            LOGGER.info("Starting chaincode as server");
             ChaincodeServer chaincodeServer = new NettyChaincodeServer(cfc,
                     cfc.getChaincodeServerConfig());
             chaincodeServer.start();
         } else {
-            logger.info("Starting chaincode as client");
+            LOGGER.info("Starting chaincode as client");
             cfc.startRouting();
         }
     }
@@ -194,10 +198,10 @@ public final class ContractRouter extends ChaincodeBase {
     public void startRouterWithChaincodeServer(final ChaincodeServer chaincodeServer)
             throws IOException, InterruptedException {
         findAllContracts();
-        logger.fine(getRoutingRegistry().toString());
+        LOGGER.fine(() -> getRoutingRegistry().toString());
 
         MetadataBuilder.initialize(getRoutingRegistry(), getTypeRegistry());
-        logger.info(() -> "Metadata follows:" + MetadataBuilder.debugString());
+        LOGGER.info(() -> "Metadata follows:" + MetadataBuilder.debugString());
 
         chaincodeServer.start();
     }
